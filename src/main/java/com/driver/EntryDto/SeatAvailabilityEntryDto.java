@@ -11,16 +11,16 @@ public class SeatAvailabilityEntryDto {
     private Station fromStation;
 
     private Station toStation;
-    private int noOfBookingSeat;
+    //private int noOfBookingSeat;
 
     public SeatAvailabilityEntryDto() {
     }
 
-    public SeatAvailabilityEntryDto(int trainId, Station fromStation, Station toStation, int noOfBookingSeat) {
+    public SeatAvailabilityEntryDto(int trainId, Station fromStation, Station toStation) {
         this.trainId = trainId;
         this.fromStation = fromStation;
         this.toStation = toStation;
-        this.noOfBookingSeat = noOfBookingSeat;
+//        this.noOfBookingSeat = noOfBookingSeat;
     }
 
 
@@ -50,11 +50,4 @@ public class SeatAvailabilityEntryDto {
         this.toStation = toStation;
     }
 
-    public int getNoOfBookingSeat() {
-        return noOfBookingSeat;
-    }
-
-    public void setNoOfBookingSeat(int noOfBookingSeat) {
-        this.noOfBookingSeat = noOfBookingSeat;
-    }
 }

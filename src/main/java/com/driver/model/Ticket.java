@@ -39,6 +39,7 @@ public class Ticket {
         this.fromStation = fromStation;
         this.toStation = toStation;
         this.totalFare = totalFare;
+
     }
 
     public int getTotalFare() {
