@@ -22,99 +22,103 @@ public class TrainService {
     @Autowired
     TrainRepository trainRepository;
 
-    List<Train> trains = new ArrayList<>();
-    public Integer addTrain(AddTrainEntryDto trainEntryDto){
+    List<Train>trains=new ArrayList<>();
 
-        //Add the train to the trainRepository
-        //and route String logic to be taken from the Problem statement.
-        //Save the train and return the trainId that is generated from the database.
+    public Integer addTrain(AddTrainEntryDto trainEntryDto){
         //Avoid using the lombok library
         Train train = new Train();
         train.setNoOfSeats(trainEntryDto.getNoOfSeats());
 
-        List<Station> list =trainEntryDto.getStationRoute();
-        String route =" ";
-        for(int i =0; i<list.size()-1;i++ ){
-            if(i == list.size()-1)
+        List<Station> list = trainEntryDto.getStationRoute();
+        String route = "";
+
+        for(int i=0;i<list.size();i++){
+            if(i==list.size()-1)
                 route += list.get(i);
             else
-                route +=list.get(i) +",";
+                route += list.get(i) + ",";
         }
         train.setRoute(route);
 
         train.setDepartureTime(trainEntryDto.getDepartureTime());
         trains.add(train);
         return trainRepository.save(train).getTrainId();
+
     }
 
     public Integer calculateAvailableSeats(SeatAvailabilityEntryDto seatAvailabilityEntryDto){
 
-//        Calculate the total seats available
-//        Suppose the route is A B C D
-//        And there are 2 seats available in total in the train
-//        and 2 tickets are booked from A to C and B to D.
-//        The seat is available only between A to C and A to B. If a seat is empty between 2 station it will be counted to our final answer
-//        even if that seat is booked post the destStation or before the boardingStation
-//        Inshort : a train has totalNo of seats and there are tickets from and to different locations
-//        We need to find out the available seats between the given 2 stations.
+        //Calculate the total seats available
+        //Suppose the route is A B C D
+        //And there are 2 seats avaialble in total in the train and 2 tickets are booked from A to C and B to D.
+        //The seat is available only between A to C and A to B. If a seat is empty between 2 station it will be counted to our final ans
+        //even if that seat is booked post the destStation or before the boardingStation
+        //Inshort : a train has totalNo of seats and there are tickets from and to different locations
+        //We need to find out the available seats between the given 2 stations.
+        Train train=trainRepository.findById(seatAvailabilityEntryDto.getTrainId()).get();
 
-        Train trains = trainRepository.findById(seatAvailabilityEntryDto.getTrainId()).get();
-
-        List<Ticket>ticketList=trains.getBookedTickets();
-        String []trainRoot=trains.getRoute().split(",");
-        HashMap<String,Integer> map=new HashMap<>();
-        for(int i=0;i<trainRoot.length;i++){
-            map.put(trainRoot[i],i);
-        }
-        if(!map.containsKey(seatAvailabilityEntryDto.getFromStation().toString())||!map.containsKey(seatAvailabilityEntryDto.getToStation().toString())){
-            return 0;
-        }
+        List<Ticket>ticketList=train.getBookedTickets();        // total booked ticket
+        String []trainRoot=train.getRoute().split(","); // trains route seperated by comma
         int booked=0;
         for(Ticket ticket:ticketList){
-            booked+=ticket.getPassengersList().size();
+            booked+=ticket.getPassengersList().size(); //  numbers total tickets booked
         }
-        int count =trains.getNoOfSeats()-booked;
-        for(Ticket t: ticketList) {
-            String fromStation = t.getFromStation().toString();
-            String toStation = t.getToStation().toString();
-            if (map.get(seatAvailabilityEntryDto.getToStation().toString()) < map.get(fromStation)) {
-                count++;
-            } else if (map.get(seatAvailabilityEntryDto.getFromStation().toString()) >= map.get(toStation)) {
-                count++;
+
+        HashMap<String,Integer> map=new HashMap<>();
+        for(int i=0;i<trainRoot.length;i++){
+            map.put(trainRoot[i],i);        // key - train name,  value - no. sequence of upcoming stations
+        }
+        if(!map.containsKey(seatAvailabilityEntryDto.getFromStation().toString())||!map.containsKey(seatAvailabilityEntryDto.getToStation().toString())){
+            return 0;       // if either of the station doesn't exsits
+        }
+
+        int seatCount=train.getNoOfSeats()-booked;
+        for(Ticket t:ticketList){
+            String fromStation=t.getFromStation().toString();
+            String toStation=t.getToStation().toString();
+            if(map.get(seatAvailabilityEntryDto.getToStation().toString())<=map.get(fromStation)){
+                seatCount++;
+            }
+            else if (map.get(seatAvailabilityEntryDto.getFromStation().toString())>=map.get(toStation)){
+                seatCount++;
             }
         }
-       return count+2;
+        return seatCount+2;
     }
 
     public Integer calculatePeopleBoardingAtAStation(Integer trainId,Station station) throws Exception{
 
         //We need to find out the number of people who will be boarding a train from a particular station
-        //if the trainId is not passing through that station
-        //throw new Exception("Train is not passing from this station");
-
-        //  in a happy case we need to find out the number of such people.
-        int noOfPassengers=0;
         Train train=trainRepository.findById(trainId).get();
         String reqStation=station.toString();
-
         String arr[]=train.getRoute().split(",");
         boolean found=false;
+
         for(String s:arr){
             if(s.equals(reqStation)){
                 found=true;
                 break;
             }
-            if(found==false){
-                throw new Exception("Train is not passing from this station");
-            }
         }
+        //if the trainId is not passing through that station
+
+        if(found==false){
+            throw new Exception("Train is not passing from this station");
+        }
+
+        int noOfPassengers=0;
+        //throw new Exception("Train is not passing from this station");
         List<Ticket>ticketList= train.getBookedTickets();
         for(Ticket ticket:ticketList){
             if(ticket.getFromStation().toString().equals(reqStation)){
                 noOfPassengers+=ticket.getPassengersList().size();
-
             }
         }
+
+
+        //  in a happy case we need to find out the number of such people.
+
+
         return noOfPassengers;
     }
 
@@ -122,10 +126,8 @@ public class TrainService {
 
         //Throughout the journey of the train between any 2 stations
         Train train=trainRepository.findById(trainId).get();
-
         //We need to find out the age of the oldest person that is travelling the train
         int age= Integer.MIN_VALUE;
-
         //If there are no people travelling in that train you can return 0
         if(train.getBookedTickets().size()==0)return 0;
 
@@ -141,11 +143,6 @@ public class TrainService {
 
     public List<Integer> trainsBetweenAGivenTime(Station station, LocalTime startTime, LocalTime endTime){
 
-        //When you are at a particular station you need to find out the number of trains that will pass through a given station
-        //between a particular time frame both start time and end time included.
-        //You can assume that the date change doesn't need to be done ie the travel will certainly happen with the same date (More details
-        //in problem statement)
-        //You can also assume the seconds and milli seconds value will be 0 in a LocalTime format.
         List<Integer> TrainList = new ArrayList<>();
         List<Train> trains = trainRepository.findAll();
         for(Train t:trains){

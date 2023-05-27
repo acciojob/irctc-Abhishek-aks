@@ -58,7 +58,7 @@ public class TicketService {
         for(int id: ids){
             passengerList.add(passengerRepository.findById(id).get());
         }
-        int x=-1,y=-1;
+        int x=-1, y=-1;
         for(int i=0;i<stations.length;i++){
             if(bookTicketEntryDto.getFromStation().toString().equals(stations[i])){
                 x=i;
