@@ -23,6 +23,8 @@ public class SeatAvailabilityEntryDto {
         this.noOfBookingSeat = noOfBookingSeat;
     }
 
+
+
     public int getTrainId() {
         return trainId;
     }
